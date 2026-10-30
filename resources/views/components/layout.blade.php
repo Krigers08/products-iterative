@@ -11,7 +11,7 @@
 <body>
     <div class="page">
         <header class="site-header">
-            <h1>Produktu veikals</h1>
+            <h1 class="site-logo">Testa logo</h1>
             <p>Vienkāršs produktu pārvaldības rīks</p>
         </header>
 
@@ -36,13 +36,13 @@
             {{ $slot }}
         </main>
 
-        <aside class="site-info" aria-label="Informācija">
-            <h2>Par veikalu</h2>
-            <p>Šeit var apskatīt, pievienot, rediģēt un dzēst produktus.</p>
+        <aside class="site-info" aria-label="Reklāma">
+            <h2>Reklāma</h2>
+            <p>Šis ir testa reklāmas teksts.</p>
         </aside>
 
         <footer class="site-footer">
-            <p>&copy; {{ date('Y') }} Produktu veikals</p>
+            <p>&copy; {{ date('Y') }} Testa copyright teksts</p>
         </footer>
     </div>
 </body>

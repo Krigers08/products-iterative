@@ -11,7 +11,21 @@ class Product extends Model
 
     protected $fillable = [
         'name',
+        'quantity',
         'description',
+        'expiration_date',
+        'status',
         'price',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'expiration_date' => 'date',
+            'price' => 'decimal:2',
+        ];
+    }
 }

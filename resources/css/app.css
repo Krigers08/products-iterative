@@ -81,6 +81,12 @@ body {
     margin: 0 0 4px;
 }
 
+.site-logo {
+    color: #1d4ed8;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
 .site-header p {
     margin: 0;
     color: #64748b;

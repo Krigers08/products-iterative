@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Product;
+use Database\Seeders\ProductSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -13,6 +14,12 @@ test('the product index lists products', function () {
         ->assertSee($products->first()->name);
 });
 
+test('the product seeder creates at least 20 products', function () {
+    $this->seed(ProductSeeder::class);
+
+    expect(Product::count())->toBeGreaterThanOrEqual(20);
+});
+
 test('the product create page is displayed', function () {
     $this->get(route('products.create'))
         ->assertOk()
@@ -22,14 +29,20 @@ test('the product create page is displayed', function () {
 test('a product can be created', function () {
     $this->post(route('products.store'), [
         'name' => 'Jauns produkts',
+        'quantity' => 12,
         'description' => 'Produkta apraksts',
+        'expiration_date' => '2026-12-31',
+        'status' => 'available',
         'price' => 12.5,
     ])->assertRedirect();
 
     $product = Product::firstWhere('name', 'Jauns produkts');
 
     expect($product)->not->toBeNull()
+        ->and($product->quantity)->toBe(12)
         ->and($product->description)->toBe('Produkta apraksts')
+        ->and($product->expiration_date->toDateString())->toBe('2026-12-31')
+        ->and($product->status)->toBe('available')
         ->and((float) $product->price)->toBe(12.5);
 });
 
@@ -55,20 +68,30 @@ test('a product can be updated', function () {
 
     $this->put(route('products.update', $product), [
         'name' => 'Atjaunināts produkts',
+        'quantity' => 7,
         'description' => 'Jauns apraksts',
+        'expiration_date' => '2027-01-15',
+        'status' => 'out_of_stock',
         'price' => 20,
     ])->assertRedirect(route('products.show', $product));
 
     expect($product->refresh())
         ->name->toBe('Atjaunināts produkts')
-        ->description->toBe('Jauns apraksts');
+        ->quantity->toBe(7)
+        ->description->toBe('Jauns apraksts')
+        ->status->toBe('out_of_stock');
+
+    expect($product->expiration_date->toDateString())->toBe('2027-01-15');
 });
 
 test('a product requires valid data', function () {
     $this->post(route('products.store'), [
         'name' => '',
+        'quantity' => -1,
+        'expiration_date' => 'nav-datums',
+        'status' => '',
         'price' => 'nav-skaitlis',
-    ])->assertSessionHasErrors(['name', 'price']);
+    ])->assertSessionHasErrors(['name', 'quantity', 'expiration_date', 'status', 'price']);
 });
 
 test('a product can be deleted', function () {
