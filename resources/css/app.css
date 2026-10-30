@@ -7,3 +7,159 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+/* Holy grail layout: header, left nav, main content, right info, footer. */
+.page {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr) 220px;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+        "nav header header"
+        "nav main   info"
+        "nav footer footer";
+    gap: 20px;
+    min-height: 100vh;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.site-header {
+    grid-area: header;
+}
+
+.site-nav {
+    grid-area: nav;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+}
+
+.site-main {
+    grid-area: main;
+    min-width: 0;
+}
+
+.site-info {
+    grid-area: info;
+}
+
+.site-footer {
+    grid-area: footer;
+}
+
+.site-header,
+.site-nav,
+.site-info,
+.site-footer {
+    padding: 16px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.site-header h1 {
+    margin: 0 0 4px;
+}
+
+.site-header p {
+    margin: 0;
+    color: #64748b;
+}
+
+.nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.nav-list a {
+    display: block;
+    padding: 10px 12px;
+    color: #1d4ed8;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.nav-list a:hover {
+    background: #eff6ff;
+    text-decoration: none;
+}
+
+article {
+    padding: 16px;
+    margin: 16px 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+article h2 {
+    margin-top: 0;
+}
+
+main a {
+    color: #1d4ed8;
+}
+
+input,
+textarea,
+button {
+    display: block;
+    margin: 8px 0 16px;
+    padding: 10px;
+}
+
+input,
+textarea {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+}
+
+button {
+    cursor: pointer;
+    color: white;
+    background: #1d4ed8;
+    border: 0;
+    border-radius: 6px;
+}
+
+.success {
+    color: green;
+}
+
+.error {
+    color: red;
+}
+
+@media (max-width: 800px) {
+    .page {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "nav"
+            "main"
+            "info"
+            "footer";
+    }
+
+    .nav-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}
