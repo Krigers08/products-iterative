@@ -29,9 +29,8 @@
         </aside>
 
         <main class="site-main">
-            @if (session('success'))
-                <p class="success">{{ session('success') }}</p>
-            @endif
+            <x-flash-success />
+            <x-flash-errors />
 
             {{ $slot }}
         </main>

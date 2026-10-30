@@ -94,6 +94,29 @@ test('a product requires valid data', function () {
     ])->assertSessionHasErrors(['name', 'quantity', 'expiration_date', 'status', 'price']);
 });
 
+test('validation errors are displayed in the flash errors component', function () {
+    $this->from(route('products.create'))
+        ->followingRedirects()
+        ->post(route('products.store'), [])
+        ->assertOk()
+        ->assertSee('flash-errors', false)
+        ->assertSee('Lūdzu, izlabojiet šādas kļūdas:');
+});
+
+test('success messages are displayed in the flash success component', function () {
+    $this->followingRedirects()
+        ->post(route('products.store'), [
+            'name' => 'Flash produkts',
+            'quantity' => 5,
+            'description' => 'Testa apraksts',
+            'expiration_date' => '2027-06-30',
+            'status' => 'available',
+        ])
+        ->assertOk()
+        ->assertSee('flash-success', false)
+        ->assertSee('Produkts veiksmīgi izveidots!');
+});
+
 test('a product can be deleted', function () {
     $product = Product::factory()->create();
 
