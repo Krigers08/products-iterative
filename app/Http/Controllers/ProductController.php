@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\InsufficientQuantityException;
 use App\Models\Product;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
@@ -44,40 +45,50 @@ class ProductController extends Controller
         return view('products.show', compact('product'));
     }
 
-    public function increaseQuantity(Request $request, Product $product): RedirectResponse
+    public function increaseQuantity(Request $request, Product $product): JsonResponse|RedirectResponse
     {
         $validated = $this->validateQuantityChange($request);
 
-        DB::transaction(function () use ($product, $validated): void {
-            $lockedProduct = Product::query()->lockForUpdate()->findOrFail($product->getKey());
+        $updatedQuantity = $product->increaseQuantity($validated['amount']);
 
-            $lockedProduct->increment('quantity', $validated['amount']);
-        });
+        $message = "Produkta daudzums palielināts par {$validated['amount']}!";
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'quantity' => $updatedQuantity,
+                'message' => $message,
+            ]);
+        }
 
         return redirect()
             ->route('products.show', $product)
-            ->with('success', "Produkta daudzums palielināts par {$validated['amount']}!");
+            ->with('success', $message);
     }
 
-    public function decreaseQuantity(Request $request, Product $product): RedirectResponse
+    public function decreaseQuantity(Request $request, Product $product): JsonResponse|RedirectResponse
     {
         $validated = $this->validateQuantityChange($request);
 
-        DB::transaction(function () use ($product, $validated): void {
-            $lockedProduct = Product::query()->lockForUpdate()->findOrFail($product->getKey());
+        try {
+            $updatedQuantity = $product->decreaseQuantity($validated['amount']);
+        } catch (InsufficientQuantityException $exception) {
+            throw ValidationException::withMessages([
+                'amount' => $exception->getMessage(),
+            ]);
+        }
 
-            if ($lockedProduct->quantity < $validated['amount']) {
-                throw ValidationException::withMessages([
-                    'amount' => "Nepietiekams produkta daudzums. Pieejams: {$lockedProduct->quantity}.",
-                ]);
-            }
+        $message = "Produkta daudzums samazināts par {$validated['amount']}!";
 
-            $lockedProduct->decrement('quantity', $validated['amount']);
-        });
+        if ($request->expectsJson()) {
+            return response()->json([
+                'quantity' => $updatedQuantity,
+                'message' => $message,
+            ]);
+        }
 
         return redirect()
             ->route('products.show', $product)
-            ->with('success', "Produkta daudzums samazināts par {$validated['amount']}!");
+            ->with('success', $message);
     }
 
     public function edit(Product $product)

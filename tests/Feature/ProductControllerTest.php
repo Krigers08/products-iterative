@@ -130,7 +130,32 @@ describe('quantity', function () {
             ->assertSee('Pievedums (+)')
             ->assertSee('Izpirkšana (−)')
             ->assertSee(route('products.quantity.increase', $product), false)
-            ->assertSee(route('products.quantity.decrease', $product), false);
+            ->assertSee(route('products.quantity.decrease', $product), false)
+            ->assertSee('data-quantity-form', false)
+            ->assertSee('data-quantity-value', false);
+    });
+
+    it('updates the quantity with an ajax request', function () {
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        $this->postJson(route('products.quantity.increase', $product), ['amount' => 3])
+            ->assertOk()
+            ->assertJson([
+                'quantity' => 13,
+                'message' => 'Produkta daudzums palielināts par 3!',
+            ]);
+
+        expect($product->refresh()->quantity)->toBe(13);
+    });
+
+    it('returns validation errors for an ajax decrease below zero', function () {
+        $product = Product::factory()->create(['quantity' => 2]);
+
+        $this->postJson(route('products.quantity.decrease', $product), ['amount' => 3])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('amount');
+
+        expect($product->refresh()->quantity)->toBe(2);
     });
 });
 

@@ -2,7 +2,7 @@
     <h1>{{ $product->name }}</h1>
 
     <p>{{ $product->description }}</p>
-    <p>Daudzums: {{ $product->quantity }}</p>
+    <p>Daudzums: <span data-quantity-value>{{ $product->quantity }}</span></p>
     <p>Derīguma termiņš: {{ $product->expiration_date?->format('d.m.Y') ?? '—' }}</p>
     <p>Statuss: {{ $product->status }}</p>
 
@@ -12,18 +12,27 @@
 
     <section class="quantity-controls" aria-labelledby="quantity-heading">
         <h2 id="quantity-heading">Daudzuma maiņa</h2>
-        <p>Pašreizējais daudzums: <strong>{{ $product->quantity }}</strong></p>
+        <p>Pašreizējais daudzums: <strong data-quantity-value>{{ $product->quantity }}</strong></p>
 
-        <form action="{{ route('products.quantity.increase', $product) }}" method="POST">
+        <form action="{{ route('products.quantity.increase', $product) }}" method="POST"
+              data-quantity-form
+              data-quantity="{{ $product->quantity }}"
+              data-increase-url="{{ route('products.quantity.increase', $product) }}"
+              data-decrease-url="{{ route('products.quantity.decrease', $product) }}">
             @csrf
+
+            <div class="flash" data-quantity-feedback role="status" aria-live="polite" hidden></div>
 
             <label for="quantity-amount">Daudzums</label>
             <input id="quantity-amount" type="number" name="amount" min="1" step="1"
                    value="{{ old('amount', 1) }}" required>
 
             <div class="product-actions">
-                <button type="submit" class="btn btn-view">Pievedums (+)</button>
+                <button type="submit" class="btn btn-view" data-quantity-direction="increase">
+                    Pievedums (+)
+                </button>
                 <button type="submit" class="btn btn-danger"
+                        data-quantity-direction="decrease"
                         formaction="{{ route('products.quantity.decrease', $product) }}"
                         @disabled($product->quantity === 0)>
                     Izpirkšana (−)
