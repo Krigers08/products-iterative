@@ -15,16 +15,18 @@
                 <p>Cena: {{ number_format($product->price, 2) }} €</p>
             @endif
 
-            <a href="{{ route('products.show', $product) }}">Apskatīt</a>
-            <a href="{{ route('products.edit', $product) }}">Rediģēt</a>
+            <div class="product-actions">
+                <a href="{{ route('products.show', $product) }}" class="btn btn-view">Apskatīt</a>
+                <a href="{{ route('products.edit', $product) }}">Rediģēt</a>
 
-            <form action="{{ route('products.destroy', $product) }}"
-                  method="POST"
-                  onsubmit="return confirm('Vai tiešām dzēst produktu?')">
-                @csrf
-                @method('DELETE')
-                <button type="submit">Dzēst</button>
-            </form>
+                <form action="{{ route('products.destroy', $product) }}"
+                      method="POST"
+                      onsubmit="return confirm('Vai tiešām dzēst produktu?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">Dzēst</button>
+                </form>
+            </div>
         </article>
     @empty
         <p>Produktu vēl nav.</p>
