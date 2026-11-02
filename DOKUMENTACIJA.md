@@ -104,7 +104,22 @@ atbalstu.
   informācijas josla un kājene.
 - Navigācija uz produktu sarakstu un jauna produkta pievienošanu.
 
-### 9. Sākuma datu ģenerēšana
+### 9. Vite integrācija
+
+- `vite.config.js` reģistrē abus ieejas punktus: `resources/css/app.css` un
+  `resources/js/app.js`.
+- `resources/views/components/layout.blade.php` iekļauj tos ar
+  `@vite(['resources/css/app.css', 'resources/js/app.js'])`, tāpēc JavaScript tiek
+  ielādēts tāpat kā CSS.
+- Izstrādes režīmā (`npm run dev` vai `composer run dev`) Vite servē abus failus no
+  `http://127.0.0.1:5173`, un `public/hot` norāda uz darbojošos serveri.
+- Produkcijas režīmā `npm run build` ģenerē `public/build/manifest.json`, kurā ir
+  gan CSS, gan JS ieraksti; `@vite` pēc manifesta iekļauj sajauktos failus.
+- Ja `public/hot` eksistē, bet Vite serveris nedarbojas, lapa nespēs ielādēt CSS un
+  JS — tad jāpalaiž `npm run dev` vai jāizdzēš `public/hot` un jāpalaiž
+  `npm run build`.
+
+### 10. Sākuma datu ģenerēšana
 
 - `Database\Seeders\ProductSeeder` izveido 30 nejaušus produktus, izmantojot
   `ProductFactory`.
@@ -194,7 +209,7 @@ Testi atrodas mapē `tests/`. Visus testus palaiž ar:
 php artisan test --compact
 ```
 
-Pašlaik kopā: **62 testi** (19 unit un 43 feature).
+Pašlaik kopā: **64 testi** (19 unit un 45 feature).
 
 ### `tests/Feature/ProductControllerTest.php`
 
@@ -266,6 +281,15 @@ Vispārīgi produkta funkciju un skatu testi (12 testi).
 | Tests | Ko pārbauda |
 | --- | --- |
 | the application redirects to the product index | Saknes maršruts `/` pāradresē uz `products.index`. |
+
+### `tests/Feature/ViteAssetsTest.php`
+
+Vite integrācijas testi (2 testi).
+
+| Tests | Ko pārbauda |
+| --- | --- |
+| the layout loads the css and javascript entry points through vite | Lapā ir `<script type="module">` un abi Vite ieejas punkti. Izstrādes režīmā (eksistē `public/hot`) pārbauda `@vite/client`, `resources/css/app.css` un `resources/js/app.js`; produkcijas režīmā pārbauda manifestā norādītos CSS un JS failus. |
+| the layout loads the built css and javascript assets from the vite manifest | Piespiedu produkcijas režīmā (ignorējot `public/hot`) pārbauda, ka lapa satur `<link rel="stylesheet">`, `<script type="module">` un konkrētos failus no `public/build/manifest.json` — gan CSS, gan JS. |
 
 ### `tests/Unit/ProductQuantityTest.php`
 
