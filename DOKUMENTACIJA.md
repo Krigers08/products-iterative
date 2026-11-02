@@ -184,9 +184,11 @@ Testi atrodas mapē `tests/`. Visus testus palaiž ar:
 php artisan test --compact
 ```
 
+Pašlaik kopā: **44 testi**.
+
 ### `tests/Feature/ProductControllerTest.php`
 
-Kontroliera darbību un HTTP slāņa testi (17 testi).
+Kontroliera darbību un HTTP slāņa testi (22 testi).
 
 | Tests | Ko pārbauda |
 | --- | --- |
@@ -203,6 +205,11 @@ Kontroliera darbību un HTTP slāņa testi (17 testi).
 | shows the quantity controls on the product page | Apskates lapā ir abas pogas, abi daudzuma maršruti un `data-quantity-form` / `data-quantity-value` atribūti. |
 | updates the quantity with an ajax request | `postJson` uz `quantity.increase` ar `amount=3` atgriež 200 un JSON ar `quantity=13` un ziņojumu; datubāzē daudzums ir 13. |
 | returns validation errors for an ajax decrease below zero | `postJson` samazinājums zem 0 atgriež `422`, `errors.amount`, un daudzums nemainās. |
+| decreases the quantity with an ajax request | `postJson` uz `quantity.decrease` ar `amount=4` atgriež 200 un JSON ar `quantity=6` un ziņojumu; datubāzē daudzums ir 6. |
+| requires a positive whole amount when decreasing | `amount=0` un `amount=1.5` samazināšanā atgriež `422` ar `errors.amount`, un daudzums nemainās. |
+| requires an amount for a quantity change | Pieprasījums bez `amount` abos virzienos atgriež `422` ar `errors.amount`, un daudzums nemainās. |
+| accepts the maximum allowed amount | `amount=1000000` tiek pieņemts, atgriež 200 un datubāzē saglabā 1 000 000. |
+| rejects an amount above the allowed maximum | `amount=1000001` abos virzienos atgriež `422` ar `errors.amount`, un daudzums nemainās. |
 | renders the edit form | `GET products.edit` atgriež 200 un skatu `products.edit` ar pareizo produktu. |
 | updates a product and redirects to its page | `PUT products.update` atjaunina visus laukus, pāradresē uz apskati un uzstāda veiksmes paziņojumu. |
 | rejects invalid product data | (Atjaunināšanas tests.) Nederīgi dati `PUT products.update` rada kļūdas laukiem `name`, `quantity`, `expiration_date`, `status`. |
@@ -210,15 +217,18 @@ Kontroliera darbību un HTTP slāņa testi (17 testi).
 
 ### `tests/Feature/ProductQuantityTest.php`
 
-Modeļa daudzuma loģikas testi (5 testi).
+Modeļa daudzuma loģikas testi (8 testi).
 
 | Tests | Ko pārbauda |
 | --- | --- |
 | increases the quantity and returns the new value | `increaseQuantity(4)` no 10 atgriež 14, atjaunina modeļa instanci un datubāzi. |
+| increases the quantity from zero | `increaseQuantity(5)` pie daudzuma 0 atgriež 5 un saglabā to datubāzē. |
+| uses the current database value when the model is stale | (Palielināšana.) Ja datubāzē daudzums ir 20, bet modeļa instancē — 10, `increaseQuantity(5)` izmanto datubāzes vērtību un atgriež 25. |
 | decreases the quantity and returns the new value | `decreaseQuantity(4)` no 10 atgriež 6, atjaunina modeļa instanci un datubāzi. |
 | allows decreasing the quantity to zero | `decreaseQuantity(5)` no 5 atgriež 0 un saglabā 0 datubāzē. |
+| uses the current database value when the model is stale | (Samazināšana.) Ja datubāzē daudzums ir 20, bet modeļa instancē — 10, `decreaseQuantity(5)` izmanto datubāzes vērtību un atgriež 15. |
 | throws when the requested amount exceeds the available quantity | `decreaseQuantity(3)` pie daudzuma 2 izmet `InsufficientQuantityException` ar konkrētu ziņojumu un daudzums paliek 2. |
-| exposes the available quantity on the exception | Izņēmuma `availableQuantity` ir vienāds ar faktiski pieejamo daudzumu (2). |
+| exposes the available quantity on the exception | Ja izņēmums netiek izmests, tests neizdodas; pretējā gadījumā pārbauda, ka `availableQuantity` ir 2. |
 
 ### `tests/Feature/ProductTest.php`
 

@@ -157,6 +157,71 @@ describe('quantity', function () {
 
         expect($product->refresh()->quantity)->toBe(2);
     });
+
+    it('decreases the quantity with an ajax request', function () {
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        $this->postJson(route('products.quantity.decrease', $product), ['amount' => 4])
+            ->assertOk()
+            ->assertJson([
+                'quantity' => 6,
+                'message' => 'Produkta daudzums samazināts par 4!',
+            ]);
+
+        expect($product->refresh()->quantity)->toBe(6);
+    });
+
+    it('requires a positive whole amount when decreasing', function () {
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        $this->postJson(route('products.quantity.decrease', $product), ['amount' => 0])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('amount');
+
+        $this->postJson(route('products.quantity.decrease', $product), ['amount' => 1.5])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('amount');
+
+        expect($product->refresh()->quantity)->toBe(10);
+    });
+
+    it('requires an amount for a quantity change', function () {
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        $this->postJson(route('products.quantity.increase', $product))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('amount');
+
+        $this->postJson(route('products.quantity.decrease', $product))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('amount');
+
+        expect($product->refresh()->quantity)->toBe(10);
+    });
+
+    it('accepts the maximum allowed amount', function () {
+        $product = Product::factory()->create(['quantity' => 0]);
+
+        $this->postJson(route('products.quantity.increase', $product), ['amount' => 1_000_000])
+            ->assertOk()
+            ->assertJsonPath('quantity', 1_000_000);
+
+        expect($product->refresh()->quantity)->toBe(1_000_000);
+    });
+
+    it('rejects an amount above the allowed maximum', function () {
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        $this->postJson(route('products.quantity.increase', $product), ['amount' => 1_000_001])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('amount');
+
+        $this->postJson(route('products.quantity.decrease', $product), ['amount' => 1_000_001])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('amount');
+
+        expect($product->refresh()->quantity)->toBe(10);
+    });
 });
 
 describe('edit', function () {

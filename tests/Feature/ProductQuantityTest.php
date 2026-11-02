@@ -14,6 +14,23 @@ describe('increaseQuantity', function () {
             ->and($product->quantity)->toBe(14)
             ->and($product->refresh()->quantity)->toBe(14);
     });
+
+    it('increases the quantity from zero', function () {
+        $product = Product::factory()->create(['quantity' => 0]);
+
+        expect($product->increaseQuantity(5))->toBe(5)
+            ->and($product->refresh()->quantity)->toBe(5);
+    });
+
+    it('uses the current database value when the model is stale', function () {
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        Product::query()->whereKey($product->getKey())->update(['quantity' => 20]);
+
+        expect($product->increaseQuantity(5))->toBe(25)
+            ->and($product->quantity)->toBe(25)
+            ->and($product->refresh()->quantity)->toBe(25);
+    });
 });
 
 describe('decreaseQuantity', function () {
@@ -30,6 +47,16 @@ describe('decreaseQuantity', function () {
 
         expect($product->decreaseQuantity(5))->toBe(0)
             ->and($product->refresh()->quantity)->toBe(0);
+    });
+
+    it('uses the current database value when the model is stale', function () {
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        Product::query()->whereKey($product->getKey())->update(['quantity' => 20]);
+
+        expect($product->decreaseQuantity(5))->toBe(15)
+            ->and($product->quantity)->toBe(15)
+            ->and($product->refresh()->quantity)->toBe(15);
     });
 
     it('throws when the requested amount exceeds the available quantity', function () {
@@ -49,6 +76,8 @@ describe('decreaseQuantity', function () {
 
         try {
             $product->decreaseQuantity(3);
+
+            $this->fail('InsufficientQuantityException netika izmests.');
         } catch (InsufficientQuantityException $exception) {
             expect($exception->availableQuantity)->toBe(2);
         }
