@@ -10,6 +10,43 @@
         <p>Cena: {{ number_format($product->price, 2) }} €</p>
     @endif
 
+    <section class="tag-controls" aria-labelledby="tags-heading">
+        <h2 id="tags-heading">Birkas</h2>
+
+        @if ($product->tags->isEmpty())
+            <p>Produktam vēl nav pievienotu birku.</p>
+        @else
+            <ul class="tag-list">
+                @foreach ($product->tags as $tag)
+                    <li class="tag-item">
+                        <span>{{ $tag->name }}</span>
+
+                        <form action="{{ route('products.tags.destroy', [$product, $tag]) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+
+                            <button type="submit" class="btn btn-danger">Noņemt</button>
+                        </form>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+
+        <form action="{{ route('products.tags.store', $product) }}" method="POST" class="tag-form">
+            @csrf
+
+            <label for="tag-name">Jauna birka</label>
+            <input id="tag-name" type="text" name="name" maxlength="50"
+                   value="{{ old('name') }}" required>
+
+            @error('name')
+                <p class="error">{{ $message }}</p>
+            @enderror
+
+            <button type="submit" class="btn btn-view">Pievienot birku</button>
+        </form>
+    </section>
+
     <section class="quantity-controls" aria-labelledby="quantity-heading">
         <h2 id="quantity-heading">Daudzuma maiņa</h2>
         <p>Pašreizējais daudzums: <strong data-quantity-value>{{ $product->quantity }}</strong></p>

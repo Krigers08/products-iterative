@@ -162,6 +162,51 @@ article h2 {
     margin: 0;
 }
 
+.tag-controls {
+    padding: 16px;
+    margin: 16px 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.tag-controls h2 {
+    margin-top: 0;
+}
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.tag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+}
+
+.tag-item form {
+    margin: 0;
+}
+
+.tag-item .btn {
+    margin: 0;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+}
+
+.tag-form {
+    margin: 0;
+}
+
 .btn {
     display: inline-flex;
     align-items: center;

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Exceptions\InsufficientQuantityException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -20,6 +21,14 @@ class Product extends Model
         'status',
         'price',
     ];
+
+    /**
+     * @return BelongsToMany<Tag, $this>
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class);
+    }
 
     /**
      * Increase the quantity by the given amount (delivery).

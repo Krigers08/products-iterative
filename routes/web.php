@@ -12,4 +12,9 @@ Route::post('products/{product}/quantity/increase', [ProductController::class, '
 Route::post('products/{product}/quantity/decrease', [ProductController::class, 'decreaseQuantity'])
     ->name('products.quantity.decrease');
 
+Route::post('products/{product}/tags', [ProductController::class, 'attachTag'])
+    ->name('products.tags.store');
+Route::delete('products/{product}/tags/{tag}', [ProductController::class, 'detachTag'])
+    ->name('products.tags.destroy');
+
 Route::resource('products', ProductController::class);

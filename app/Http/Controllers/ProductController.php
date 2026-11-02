@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\InsufficientQuantityException;
 use App\Models\Product;
+use App\Models\Tag;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
@@ -42,7 +44,35 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
+        $product->load(['tags' => fn ($query) => $query->orderBy('name')]);
+
         return view('products.show', compact('product'));
+    }
+
+    public function attachTag(Request $request, Product $product): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:50'],
+        ]);
+
+        $tag = Tag::firstOrCreate([
+            'name' => Str::squish(Str::lower($validated['name'])),
+        ]);
+
+        $product->tags()->syncWithoutDetaching([$tag->getKey()]);
+
+        return redirect()
+            ->route('products.show', $product)
+            ->with('success', "Birka \"{$tag->name}\" pievienota!");
+    }
+
+    public function detachTag(Product $product, Tag $tag): RedirectResponse
+    {
+        $product->tags()->detach($tag->getKey());
+
+        return redirect()
+            ->route('products.show', $product)
+            ->with('success', "Birka \"{$tag->name}\" noņemta!");
     }
 
     public function increaseQuantity(Request $request, Product $product): JsonResponse|RedirectResponse
