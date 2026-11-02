@@ -107,7 +107,11 @@ class ProductController extends Controller
             'price' => 'nullable|numeric|min:0',
         ]);
 
+        $quantity = (int) $validated['quantity'];
+        unset($validated['quantity']);
+
         $product->update($validated);
+        $product->setQuantity($quantity);
 
         return redirect()->route('products.show', $product)
             ->with('success', 'Produkts veiksmīgi atjaunināts!');

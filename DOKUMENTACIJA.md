@@ -159,17 +159,27 @@ Modeļa `casts()`:
   pārvērš `InsufficientQuantityException` par validācijas kļūdu, atgriež JSON vai
   pāradresāciju.
 - `edit()` — atgriež rediģēšanas formu.
-- `update()` — validē datus, atjaunina produktu, pāradresē uz apskati.
+- `update()` — validē datus, atjaunina pārējos laukus un daudzumu caur
+  `Product::setQuantity()`, pāradresē uz apskati.
 - `destroy()` — dzēš produktu, pāradresē uz sarakstu.
 - `validateQuantityChange()` — kopīga `amount` validācija abām daudzuma darbībām.
 
 ### `App\Models\Product`
 
-- `increaseQuantity(int $amount): int` — transakcijā ar rindas bloķēšanu palielina
-  daudzumu un atgriež jauno vērtību.
-- `decreaseQuantity(int $amount): int` — transakcijā ar rindas bloķēšanu samazina
-  daudzumu, ja pietiek krājuma; pretējā gadījumā izmet
-  `InsufficientQuantityException`.
+Visas daudzuma izmaiņas notiek tikai caur modeļa metodēm. Katra metode izmanto
+`DB::transaction()` un `lockForUpdate()`, tāpēc vienlaicīgi pieprasījumi nevar
+zaudēt izmaiņas.
+
+- `increaseQuantity(int $amount): int` — palielina daudzumu un atgriež jauno vērtību.
+- `decreaseQuantity(int $amount): int` — samazina daudzumu, ja pietiek krājuma;
+  pretējā gadījumā izmet `InsufficientQuantityException`.
+- `setQuantity(int $quantity): int` — iestata absolūtu daudzumu, iekšēji izmantojot
+  `increaseQuantity()` vai `decreaseQuantity()` atkarībā no starpības.
+- `increaseQuantity()` un `decreaseQuantity()` atmet `InvalidArgumentException`, ja
+  `amount` nav pozitīvs vesels skaitlis (mazāks par 1).
+- `setQuantity()` atmet `InvalidArgumentException`, ja mērķa daudzums ir negatīvs.
+- Pēc izmaiņām metode atjauno arī modeļa instances `quantity` atribūtu, lai tā
+  sakristu ar datubāzi.
 
 ### `App\Exceptions\InsufficientQuantityException`
 
@@ -184,7 +194,7 @@ Testi atrodas mapē `tests/`. Visus testus palaiž ar:
 php artisan test --compact
 ```
 
-Pašlaik kopā: **52 testi**.
+Pašlaik kopā: **62 testi** (19 unit un 43 feature).
 
 ### `tests/Feature/ProductControllerTest.php`
 
@@ -214,21 +224,6 @@ Kontroliera darbību un HTTP slāņa testi (22 testi).
 | updates a product and redirects to its page | `PUT products.update` atjaunina visus laukus, pāradresē uz apskati un uzstāda veiksmes paziņojumu. |
 | rejects invalid product data | (Atjaunināšanas tests.) Nederīgi dati `PUT products.update` rada kļūdas laukiem `name`, `quantity`, `expiration_date`, `status`. |
 | deletes a product and redirects to the index | `DELETE products.destroy` izdzēš produktu, pāradresē uz sarakstu un modelis vairs neeksistē. |
-
-### `tests/Feature/ProductQuantityTest.php`
-
-Modeļa daudzuma loģikas testi (8 testi).
-
-| Tests | Ko pārbauda |
-| --- | --- |
-| increases the quantity and returns the new value | `increaseQuantity(4)` no 10 atgriež 14, atjaunina modeļa instanci un datubāzi. |
-| increases the quantity from zero | `increaseQuantity(5)` pie daudzuma 0 atgriež 5 un saglabā to datubāzē. |
-| uses the current database value when the model is stale | (Palielināšana.) Ja datubāzē daudzums ir 20, bet modeļa instancē — 10, `increaseQuantity(5)` izmanto datubāzes vērtību un atgriež 25. |
-| decreases the quantity and returns the new value | `decreaseQuantity(4)` no 10 atgriež 6, atjaunina modeļa instanci un datubāzi. |
-| allows decreasing the quantity to zero | `decreaseQuantity(5)` no 5 atgriež 0 un saglabā 0 datubāzē. |
-| uses the current database value when the model is stale | (Samazināšana.) Ja datubāzē daudzums ir 20, bet modeļa instancē — 10, `decreaseQuantity(5)` izmanto datubāzes vērtību un atgriež 15. |
-| throws when the requested amount exceeds the available quantity | `decreaseQuantity(3)` pie daudzuma 2 izmet `InsufficientQuantityException` ar konkrētu ziņojumu un daudzums paliek 2. |
-| exposes the available quantity on the exception | Ja izņēmums netiek izmests, tests neizdodas; pretējā gadījumā pārbauda, ka `availableQuantity` ir 2. |
 
 ### `tests/Feature/ProductWorkflowTest.php`
 
@@ -272,6 +267,33 @@ Vispārīgi produkta funkciju un skatu testi (12 testi).
 | --- | --- |
 | the application redirects to the product index | Saknes maršruts `/` pāradresē uz `products.index`. |
 
+### `tests/Unit/ProductQuantityTest.php`
+
+Modeļa daudzuma metožu unit testi (18 testi). Tā kā metodes strādā ar datubāzi,
+failā tiek izmantots `Tests\TestCase` un `RefreshDatabase`; pārbaudes tomēr ir
+izolētas — tiek testēts tikai modelis, bez HTTP slāņa, maršrutiem un skatiem.
+
+| Tests | Ko pārbauda |
+| --- | --- |
+| increases the quantity and returns the new value | `increaseQuantity(4)` no 10 atgriež 14, atjaunina modeļa instanci un datubāzi. |
+| increases the quantity from zero | `increaseQuantity(5)` pie daudzuma 0 atgriež 5 un saglabā to datubāzē. |
+| uses the current database value when the model is stale | (Palielināšana.) Ja datubāzē daudzums ir 20, bet modeļa instancē — 10, `increaseQuantity(5)` izmanto datubāzes vērtību un atgriež 25. |
+| rejects a zero amount | (Palielināšana.) `increaseQuantity(0)` izmet `InvalidArgumentException`, un daudzums nemainās. |
+| rejects a negative amount | (Palielināšana.) `increaseQuantity(-3)` izmet `InvalidArgumentException`, un daudzums nemainās. |
+| decreases the quantity and returns the new value | `decreaseQuantity(4)` no 10 atgriež 6, atjaunina modeļa instanci un datubāzi. |
+| allows decreasing the quantity to zero | `decreaseQuantity(5)` no 5 atgriež 0 un saglabā 0 datubāzē. |
+| uses the current database value when the model is stale | (Samazināšana.) Ja datubāzē daudzums ir 20, bet modeļa instancē — 10, `decreaseQuantity(5)` izmanto datubāzes vērtību un atgriež 15. |
+| throws when the requested amount exceeds the available quantity | `decreaseQuantity(3)` pie daudzuma 2 izmet `InsufficientQuantityException` ar konkrētu ziņojumu un daudzums paliek 2. |
+| exposes the available quantity on the exception | Ja izņēmums netiek izmests, tests neizdodas; pretējā gadījumā pārbauda, ka `availableQuantity` ir 2. |
+| rejects a zero amount | (Samazināšana.) `decreaseQuantity(0)` izmet `InvalidArgumentException`, un daudzums nemainās. |
+| rejects a negative amount | (Samazināšana.) `decreaseQuantity(-3)` izmet `InvalidArgumentException` (nevis palielina daudzumu), un daudzums nemainās. |
+| increases the quantity to a higher value | `setQuantity(25)` no 10 palielina daudzumu līdz 25. |
+| decreases the quantity to a lower value | `setQuantity(4)` no 10 samazina daudzumu līdz 4. |
+| keeps the quantity unchanged when the value is the same | `setQuantity(10)` pie daudzuma 10 atgriež 10 un neko nemaina. |
+| sets the quantity to zero | `setQuantity(0)` no 5 iestata 0. |
+| uses the current database value when the model is stale | Ja datubāzē daudzums ir 20, bet modeļa instancē — 10, `setQuantity(12)` izmanto datubāzes vērtību un iestata 12. |
+| rejects a negative quantity | `setQuantity(-1)` izmet `InvalidArgumentException`, un daudzums nemainās. |
+
 ### `tests/Unit/ExampleTest.php`
 
 | Tests | Ko pārbauda |
@@ -286,7 +308,7 @@ php artisan test --compact
 
 # Konkrēts tests vai fails
 php artisan test --compact --filter=testName
-vendor/bin/pest tests/Feature/ProductQuantityTest.php
+vendor/bin/pest tests/Unit/ProductQuantityTest.php
 
 # Koda formatēšana
 vendor/bin/pint --dirty --format agent
