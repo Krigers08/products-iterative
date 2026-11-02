@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
@@ -41,6 +44,42 @@ class ProductController extends Controller
         return view('products.show', compact('product'));
     }
 
+    public function increaseQuantity(Request $request, Product $product): RedirectResponse
+    {
+        $validated = $this->validateQuantityChange($request);
+
+        DB::transaction(function () use ($product, $validated): void {
+            $lockedProduct = Product::query()->lockForUpdate()->findOrFail($product->getKey());
+
+            $lockedProduct->increment('quantity', $validated['amount']);
+        });
+
+        return redirect()
+            ->route('products.show', $product)
+            ->with('success', "Produkta daudzums palielināts par {$validated['amount']}!");
+    }
+
+    public function decreaseQuantity(Request $request, Product $product): RedirectResponse
+    {
+        $validated = $this->validateQuantityChange($request);
+
+        DB::transaction(function () use ($product, $validated): void {
+            $lockedProduct = Product::query()->lockForUpdate()->findOrFail($product->getKey());
+
+            if ($lockedProduct->quantity < $validated['amount']) {
+                throw ValidationException::withMessages([
+                    'amount' => "Nepietiekams produkta daudzums. Pieejams: {$lockedProduct->quantity}.",
+                ]);
+            }
+
+            $lockedProduct->decrement('quantity', $validated['amount']);
+        });
+
+        return redirect()
+            ->route('products.show', $product)
+            ->with('success', "Produkta daudzums samazināts par {$validated['amount']}!");
+    }
+
     public function edit(Product $product)
     {
         return view('products.edit', compact('product'));
@@ -69,5 +108,15 @@ class ProductController extends Controller
 
         return redirect()->route('products.index')
             ->with('success', 'Produkts veiksmīgi dzēsts!');
+    }
+
+    /**
+     * @return array{amount: int}
+     */
+    private function validateQuantityChange(Request $request): array
+    {
+        return $request->validate([
+            'amount' => ['required', 'integer', 'min:1', 'max:1000000'],
+        ]);
     }
 }

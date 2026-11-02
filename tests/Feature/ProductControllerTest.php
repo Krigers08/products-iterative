@@ -78,6 +78,62 @@ describe('show', function () {
     });
 });
 
+describe('quantity', function () {
+    it('increases the product quantity after a delivery', function () {
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        $this->post(route('products.quantity.increase', $product), ['amount' => 5])
+            ->assertRedirect(route('products.show', $product))
+            ->assertSessionHas('success', 'Produkta daudzums palielināts par 5!');
+
+        expect($product->refresh()->quantity)->toBe(15);
+    });
+
+    it('decreases the product quantity after a purchase', function () {
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        $this->post(route('products.quantity.decrease', $product), ['amount' => 4])
+            ->assertRedirect(route('products.show', $product))
+            ->assertSessionHas('success', 'Produkta daudzums samazināts par 4!');
+
+        expect($product->refresh()->quantity)->toBe(6);
+    });
+
+    it('does not decrease the quantity below zero', function () {
+        $product = Product::factory()->create(['quantity' => 3]);
+
+        $this->from(route('products.show', $product))
+            ->post(route('products.quantity.decrease', $product), ['amount' => 4])
+            ->assertRedirect(route('products.show', $product))
+            ->assertSessionHasErrors('amount');
+
+        expect($product->refresh()->quantity)->toBe(3);
+    });
+
+    it('requires a positive whole amount', function () {
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        $this->post(route('products.quantity.increase', $product), ['amount' => 0])
+            ->assertSessionHasErrors('amount');
+
+        $this->post(route('products.quantity.increase', $product), ['amount' => 1.5])
+            ->assertSessionHasErrors('amount');
+
+        expect($product->refresh()->quantity)->toBe(10);
+    });
+
+    it('shows the quantity controls on the product page', function () {
+        $product = Product::factory()->create(['quantity' => 5]);
+
+        $this->get(route('products.show', $product))
+            ->assertOk()
+            ->assertSee('Pievedums (+)')
+            ->assertSee('Izpirkšana (−)')
+            ->assertSee(route('products.quantity.increase', $product), false)
+            ->assertSee(route('products.quantity.decrease', $product), false);
+    });
+});
+
 describe('edit', function () {
     it('renders the edit form', function () {
         $product = Product::factory()->create();
