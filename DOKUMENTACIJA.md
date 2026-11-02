@@ -184,7 +184,7 @@ Testi atrodas mapē `tests/`. Visus testus palaiž ar:
 php artisan test --compact
 ```
 
-Pašlaik kopā: **44 testi**.
+Pašlaik kopā: **52 testi**.
 
 ### `tests/Feature/ProductControllerTest.php`
 
@@ -229,6 +229,23 @@ Modeļa daudzuma loģikas testi (8 testi).
 | uses the current database value when the model is stale | (Samazināšana.) Ja datubāzē daudzums ir 20, bet modeļa instancē — 10, `decreaseQuantity(5)` izmanto datubāzes vērtību un atgriež 15. |
 | throws when the requested amount exceeds the available quantity | `decreaseQuantity(3)` pie daudzuma 2 izmet `InsufficientQuantityException` ar konkrētu ziņojumu un daudzums paliek 2. |
 | exposes the available quantity on the exception | Ja izņēmums netiek izmests, tests neizdodas; pretējā gadījumā pārbauda, ka `availableQuantity` ir 2. |
+
+### `tests/Feature/ProductWorkflowTest.php`
+
+Pilnu lietotāja scenāriju integrācijas testi (8 testi). Šie testi iet cauri visam
+pieprasījuma ceļam — maršruts, validācija, kontrolieris, modelis, datubāze un skats —
+un pārbauda, kā vienības darbojas kopā, nevis katra atsevišķi.
+
+| Tests | Ko pārbauda |
+| --- | --- |
+| creates a product through the form and shows it on the show and index pages | Atver izveides formu, iesniedz datus, pēc pāradresācijas redz veiksmes ziņojumu un produktu apskates lapā, pārbauda saglabātos laukus datubāzē un produkta parādīšanos sarakstā. |
+| edits a product through the form and shows the updated values | Atver rediģēšanas formu ar aizpildītām vecajām vērtībām, saglabā jaunos datus, pēc pāradresācijas redz atjauninātās vērtības un pārbauda tās datubāzē un sarakstā. |
+| increases the quantity from the product page and persists the change | No apskates lapas veic pievedumu, pēc pāradresācijas redz jauno daudzumu un ziņojumu, pārbauda datubāzi un sarakstu. |
+| decreases the quantity from the product page and persists the change | No apskates lapas veic izpirkšanu, pēc pāradresācijas redz jauno daudzumu un ziņojumu, pārbauda datubāzi un sarakstu. |
+| rejects a decrease larger than the stock and keeps the product unchanged | Mēģina izpirkt vairāk par pieejamo; lapa parāda validācijas kļūdu ar pieejamo daudzumu, un produkts datubāzē nemainās. |
+| handles quantity changes through ajax and renders the persisted values on the next page load | Veic AJAX palielināšanu un samazināšanu, pārbauda JSON atbildes, pēc tam ielādē lapu no jauna un pārbauda saglabātās vērtības skatā un sarakstā. |
+| returns ajax validation errors when the requested amount exceeds the stock | AJAX samazinājums virs krājuma atgriež `422` ar konkrētu `errors.amount` ziņojumu, un daudzums nemainās. |
+| disables the decrease control for an empty product and enables it after a delivery | Produktam ar daudzumu 0 poga “Izpirkšana” ir atspējota; pēc pieveduma tā vairs nav atspējota un daudzums ir atjaunināts. |
 
 ### `tests/Feature/ProductTest.php`
 
